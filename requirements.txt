@@ -1,0 +1,10 @@
+pandas
+geopandas
+numpy
+scipy
+shapely
+datetime
+matplotlib
+seaborn
+sklearn
+pickle
