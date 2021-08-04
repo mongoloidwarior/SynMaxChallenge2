@@ -33,6 +33,9 @@ import datetime
 tracking['datetime'] = pd.to_datetime(tracking['datetime'])
 tracking['date'] = tracking['datetime'].dt.date
 
+#tracking.hist(column='speed', bins=25)
+
+
 #convert to geo data frame 
 gports = gpd.GeoDataFrame(
         ports, geometry=gpd.points_from_xy(ports.lat, ports.long)).drop(['lat','long'],axis=1)
@@ -61,6 +64,18 @@ def ckdnearest(gdA, gdB):
 voyage = ckdnearest(gtracking, gports)
 voyage = voyage.sort_values(by=["vessel","datetime"])
 voyage = voyage.drop_duplicates()
+
+"""
+testing filtering on speed
+"""
+
+#keep only rows with speed=0 or >10
+voyage = voyage[(voyage['speed']==0) | (voyage['speed'] >=10)]
+
+
+"""
+end testing
+"""
 
 
 #use speed=0 as start and end points
@@ -127,7 +142,13 @@ voyages = voyage_ss.loc[voyage_ss['begin_port_id'] != voyage_ss['end_port_id']].
 #some data we first see the ship moving they are already closer to another port
 #set begin port to previous end port
 for i in range (1, voyages.shape[0]):
-    voyages.loc[voyages.index[i],'begin_port_id'] = voyages.loc[voyages.index[i-1],'end_port_id']
+    if voyages.loc[voyages.index[i-1],'vessel'] == voyages.loc[voyages.index[i],'vessel']:
+        voyages.loc[voyages.index[i],'begin_port_id'] = voyages.loc[voyages.index[i-1],'end_port_id']
+    
+    
+#issue where ships show last voyage using next ships data, delete if startdt<enddt
+voyages = voyages[voyages.begin_date < voyages.end_date]    
+    
     
 voyages.to_csv(r'C:\Users\hoodd02\SynMax\voyages.csv', index=False)
 
@@ -287,8 +308,7 @@ X_train_numerical = X_train.select_dtypes(
 X_train_numerical.head()
 
 X_train_numerical_indices = X_train_numerical.index.values
-y_train_numerical = y_train[y_train.index. \
-                                    isin(X_train_numerical_indices)]
+y_train_numerical = y_train[y_train.index.isin(X_train_numerical_indices)]
 
 #clf = DecisionTreeClassifier()
 #cv_score = cross_val_score(clf, 
@@ -310,9 +330,10 @@ X_non_nulls = X_train.dropna(axis = 1)
 X_non_nulls.nunique().sort_values(ascending = True)
 
 X_selected = X_non_nulls.loc[:, X_non_nulls.nunique().sort_values() < 200]
-cat_cols = list(X_selected.select_dtypes(['object']).columns.values)
+cat_cols = list(X_selected.select_dtypes(['float64','int64']).columns.values)
 X_categorical = X_selected[cat_cols].apply(lambda x: x.astype('category').cat.codes)
-X_train_selected = X_train_numerical.join(X_categorical)
+#X_train_selected = X_train_numerical.merge(X_categorical, on='vessel', how='left')
+X_train_selected = pd.concat([X_train_numerical,X_categorical],axis=1)
 
 #param_grid = {
 #    'n_estimators': [10, 20, 30],
