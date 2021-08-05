@@ -80,12 +80,12 @@ for i in range (0, voyage.shape[0]):
 #for i in range (0, 1000):  
     if voyage.loc[voyage.index[i],'vessel'] == current_vessel:
 #        stopped
-        if (moving==1) & (voyage.loc[voyage.index[i],'speed']==0) & (voyage.loc[voyage.index[i],'port'] != last_port):
+        if (moving==1) & (voyage.loc[voyage.index[i],'speed']==0) & (voyage.loc[voyage.index[i],'port'] != last_port) & (voyage.loc[voyage.index[i],'dist']<=.5):
             moving=0
             curr_port = voyage.loc[voyage.index[i],'port']
             end_date = voyage.loc[voyage.index[i],'date']
             addrow = 1
-        elif (moving==0) & (voyage.loc[voyage.index[i],'speed']>=10):
+        elif (moving==0) & (voyage.loc[voyage.index[i],'speed']>=10) & (voyage.loc[voyage.index[i],'dist']>=.5):
             moving=1
             last_port = curr_port
             begin_date = voyage.loc[voyage.index[i],'date']
